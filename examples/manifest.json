@@ -1,0 +1,19 @@
+{
+  "name": "Infinite Paginator for Backbone Example for Require.js",
+  "version": "1.0",
+  "description": "",
+  "app": {
+    "launch": {
+      "local_path": "./netflix-infinite-paging-requirejs/index.html"
+    }
+  },
+  "offline_enabled": true,
+  "permissions": [
+    "unlimitedStorage",
+    "<all_urls>"
+  ],
+   "icons": { 
+
+  }
+  
+}

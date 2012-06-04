@@ -1,8 +1,8 @@
-define([ "use!backbone" ], function(Backbone) {
+define([ "use!backbone", "use!handlebars", "text!views/movie.handlebars" ], function(Backbone, Handlebars, movieTemplate) {
 
 	var MovieView = Backbone.View.extend({
 		tagName : 'li',
-		template: _.template($('#resultMovieTemplate').html()),
+		template: Handlebars.compile(movieTemplate),
 
 		initialize: function() {
 			this.model.bind('change', this.render, this);

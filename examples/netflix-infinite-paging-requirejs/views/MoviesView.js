@@ -30,7 +30,9 @@ define([ "use!backbone", "use!handlebars", "text!views/movies.handlebars",
 		},
 
 		render: function () {
-		  var jsonheader = {title: "NetFlix movies starring Nicole Kidman"};
+		  var total = this.collection.info().totalPages* parseInt(this.collection.info().perPage);
+		  var visible = (this.collection.info().currentPage + 1)* this.collection.info().perPage ;
+		  var jsonheader = {title: "NetFlix movies starring Nicole Kidman", totalMovies: total, visibleMovies: visible};
 		  $("#movies_header").html(this.template(jsonheader));
 		  
 		  var jsonfortemplate  = {morePages: this.collection.info().currentPage < this.collection.info().totalPages};

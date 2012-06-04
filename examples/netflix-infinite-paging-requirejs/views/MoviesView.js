@@ -1,4 +1,5 @@
-define([ "use!backbone", "use!handlebars","text!views/movies.handlebars" ], function(Backbone, Handlebars, moviesTemplate) {
+define([ "use!backbone", "use!handlebars", "text!views/movies.handlebars",
+    "text!views/movies_footer.handlebars" ], function(Backbone, Handlebars, moviesTemplate, moviesFooter) {
 
 	var MoviesView = Backbone.View.extend({
 
@@ -17,6 +18,7 @@ define([ "use!backbone", "use!handlebars","text!views/movies.handlebars" ], func
 		tagName: 'aside',
 
 		template: Handlebars.compile(moviesTemplate),
+		moviesFooterTemplate: Handlebars.compile(moviesFooter),
 
 		initialize: function () {
 
@@ -28,8 +30,11 @@ define([ "use!backbone", "use!handlebars","text!views/movies.handlebars" ], func
 		},
 
 		render: function () {
+		  var jsonheader = {title: "NetFlix movies starring Nicole Kidman"};
+		  $("#movies_header").html(this.template(jsonheader));
+		  
 		  var jsonfortemplate  = {morePages: this.collection.info().currentPage < this.collection.info().totalPages};
-		  this.$el.html(this.template(jsonfortemplate));
+		  this.$el.html(this.moviesFooterTemplate(jsonfortemplate));
 		},
 
 		updateSortBy: function (e) {

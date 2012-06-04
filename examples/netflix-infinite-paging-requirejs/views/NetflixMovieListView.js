@@ -1,7 +1,7 @@
 define([ "use!backbone" , "views/MovieView"], function(Backbone, MovieView) {
 
 	var NetflixMovieListView = Backbone.View.extend({
-		el : '#content',
+		el : '#movies',
 
 		initialize : function () {
 
@@ -21,7 +21,7 @@ define([ "use!backbone" , "views/MovieView"], function(Backbone, MovieView) {
 		
 		addOne : function ( item ) {
 			var view = new MovieView({model:item});
-			$('#content').append(view.render().el);
+			$('#movies').append(view.render().el);
 		},
 
 		render: function(){

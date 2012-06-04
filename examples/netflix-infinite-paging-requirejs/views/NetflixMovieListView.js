@@ -1,7 +1,7 @@
-define([ "use!backbone" , "views/MovieView"], function(Backbone, MovieView) {
+define([ "use!backbone" , "use!handlebars", "views/MovieView", "text!views/netflix_movie_list.handlebars"], function(Backbone, Handlebars, MovieView, netflixPageTemplate) {
 
 	var NetflixMovieListView = Backbone.View.extend({
-		el : '#movies',
+		el : '#netflix-header',
 
 		initialize : function () {
 
@@ -14,7 +14,7 @@ define([ "use!backbone" , "views/MovieView"], function(Backbone, MovieView) {
 			tags.pager();
 
 		},
-
+		template: Handlebars.compile(netflixPageTemplate),
 		addAll : function () {
 			this.collection.each (this.addOne);
 		},
@@ -25,6 +25,9 @@ define([ "use!backbone" , "views/MovieView"], function(Backbone, MovieView) {
 		},
 
 		render: function(){
+		  var jsonfortemplate = {title: "Paginator.requestPager() example", subtitle: "Infinite Pagination"};
+		  $(this.el).html(this.template(jsonfortemplate));
+      return this;
 		}
 	});
 return NetflixMovieListView;

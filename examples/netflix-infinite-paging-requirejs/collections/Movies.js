@@ -1,13 +1,14 @@
-(function (collections, model, paginator) {
+define([ "use!backbone", "models/Movie", "use!paginator" ], function(Backbone, Movie, paginator) {
+ 
 
 	// Create a new collection using one of Backbone.Paginator's
 	// pagers. We're going to begin using the requestPager first.
 
-	collections.Movies = paginator.requestPager.extend({
+  var Movies = Backbone.Paginator.requestPager.extend({
 
 		// As usual, let's specify the model to be used
 		// with this collection
-		model: model,
+		model: Movie,
 
 		// Next, we're going to map the parameters supported by
 		// your API or backend data service back to attributes
@@ -85,4 +86,5 @@
 
 	});
 
-})( app.collections, app.models.Movie, Backbone.Paginator);
+  return Movies;
+});

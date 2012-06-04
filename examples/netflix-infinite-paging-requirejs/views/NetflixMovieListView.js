@@ -1,6 +1,6 @@
-(function ( views ) {
+define([ "use!backbone" , "views/MovieView"], function(Backbone, MovieView) {
 
-	views.NetflixMovieListView = Backbone.View.extend({
+	var NetflixMovieListView = Backbone.View.extend({
 		el : '#content',
 
 		initialize : function () {
@@ -20,12 +20,12 @@
 		},
 		
 		addOne : function ( item ) {
-			var view = new views.MovieView({model:item});
+			var view = new MovieView({model:item});
 			$('#content').append(view.render().el);
 		},
 
 		render: function(){
 		}
 	});
-
-})( app.views );
+return NetflixMovieListView;
+});

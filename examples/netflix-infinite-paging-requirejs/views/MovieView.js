@@ -1,6 +1,6 @@
-( function ( views ){
+define([ "use!backbone" ], function(Backbone) {
 
-	views.MovieView = Backbone.View.extend({
+	var MovieView = Backbone.View.extend({
 		tagName : 'li',
 		template: _.template($('#resultMovieTemplate').html()),
 
@@ -14,5 +14,5 @@
 			return this;
 		}
 	});
-
-})( app.views );
+return MovieView;
+});

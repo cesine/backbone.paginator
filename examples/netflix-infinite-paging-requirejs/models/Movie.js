@@ -1,3 +1,7 @@
-(function ( models ) {
-	models.Movie = Backbone.Model.extend({});
-})( app.models );
+define([ "use!backbone" ], function(Backbone) {
+ 
+	var Movie = Backbone.Model.extend({});
+
+
+  return Movie;
+});

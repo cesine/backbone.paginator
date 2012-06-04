@@ -1,6 +1,6 @@
-(function (views) {
+define([ "use!backbone" ], function(Backbone) {
 
-	views.MoviesView = Backbone.View.extend({
+	var MoviesView = Backbone.View.extend({
 
 		events: {
 			'click a.servernext': 'nextResultPage',
@@ -72,4 +72,5 @@
 
 	});
 
-})( app.views );
+  return MoviesView;
+});

@@ -1,4 +1,4 @@
-define([ "use!backbone" ], function(Backbone) {
+define([ "use!backbone", "use!handlebars","text!views/movies.handlebars" ], function(Backbone, Handlebars, moviesTemplate) {
 
 	var MoviesView = Backbone.View.extend({
 
@@ -16,7 +16,7 @@ define([ "use!backbone" ], function(Backbone) {
 
 		tagName: 'aside',
 
-		template: _.template($('#tmpServerPagination').html()),
+		template: Handlebars.compile(moviesTemplate),
 
 		initialize: function () {
 
@@ -28,8 +28,8 @@ define([ "use!backbone" ], function(Backbone) {
 		},
 
 		render: function () {
-			var html = this.template(this.collection.info());
-			this.$el.html(html);
+		  var jsonfortemplate  = {morePages: this.collection.info().currentPage < this.collection.info().totalPages};
+		  this.$el.html(this.template(jsonfortemplate));
 		},
 
 		updateSortBy: function (e) {

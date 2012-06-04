@@ -28,7 +28,7 @@
 
 	
 		<!--sample template for result item-->
-		<script type="text/html" id="resultMovieTemplate">
+		<script type="text/html" id="resultItemTemplate">
 			<div class="result row">
 					<div class="title">
 					<h4><%= Name %></h4>
@@ -71,13 +71,13 @@
 		<script src="../../lib/backbone.paginator.js"></script>
 
 		<!--Models/Collections-->
-		<script src="models/Movie.js"></script>
-		<script src="collections/Movies.js"></script>
+		<script src="models/Item.js"></script>
+		<script src="collections/PaginatedCollection.js"></script>
 
 		<!--Views-->
-		<script src="views/MovieView.js"></script>
-		<script src="views/MoviesView.js"></script>
-		<script src="views/NetflixMovieListView.js"></script>
+		<script src="views/ResultView.js"></script>
+		<script src="views/PaginationView.js"></script>
+		<script src="views/AppView.js"></script>
 
 
 	</body>

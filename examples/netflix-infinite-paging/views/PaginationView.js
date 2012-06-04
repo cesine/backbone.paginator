@@ -1,6 +1,6 @@
 (function (views) {
 
-	views.MoviesView = Backbone.View.extend({
+	views.PaginatedView = Backbone.View.extend({
 
 		events: {
 			'click a.servernext': 'nextResultPage',

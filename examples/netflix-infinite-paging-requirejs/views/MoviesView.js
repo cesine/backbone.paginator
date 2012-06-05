@@ -1,5 +1,5 @@
 define([ "use!backbone", "use!handlebars", "text!views/movies.handlebars",
-    "text!views/movies_footer.handlebars" ], function(Backbone, Handlebars, moviesTemplate, moviesFooter) {
+    "text!views/movies_paging_footer.handlebars" ], function(Backbone, Handlebars, moviesTemplate, moviesFooter) {
 
 	var MoviesView = Backbone.View.extend({
 
@@ -35,8 +35,14 @@ define([ "use!backbone", "use!handlebars", "text!views/movies.handlebars",
 		  var jsonheader = {title: "NetFlix movies starring Nicole Kidman", totalMovies: total, visibleMovies: visible};
 		  $("#movies_header").html(this.template(jsonheader));
 		  
-		  var jsonfortemplate  = {morePages: this.collection.info().currentPage < this.collection.info().totalPages};
-		  this.$el.html(this.moviesFooterTemplate(jsonfortemplate));
+		  var footerjson  = this.collection.info();
+		  footerjson.morePages= this.collection.info().currentPage < this.collection.info().totalPages;
+		  footerjson.afterFirstPage = this.collection.info().currentPage > this.collection.info().firstPage;
+		  footerjson.showNext = this.collection.info().currentPage < this.collection.info().totalPages;
+		  footerjson.showFirst = this.collection.info().currentPage != this.collection.info().firstPage;
+		  footerjson.showLast = this.collection.info().currentPage != this.collection.info().lastPage;
+		  
+		  this.$el.html(this.moviesFooterTemplate(footerjson));
 		},
 
 		updateSortBy: function (e) {

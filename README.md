@@ -8,7 +8,7 @@ You can either download the raw source code for the project, fork the repository
 
 * Production: [production version][min] 3.3K file size (1.1K gzipped)
 * Development: [development version][max] 7.01K file size (2.28K gzipped)
-* Examples: [tarball](https://github.com/addyosmani/backbone.paginator/zipball/v0.154)
+* Examples: [tarball](https://github.com/addyosmani/backbone.paginator/zipball/)
 
 [min]: https://raw.github.com/addyosmani/backbone.paginator/master/dist/backbone.paginator.min.js
 [max]: https://raw.github.com/addyosmani/backbone.paginator/master/dist/backbone.paginator.js
@@ -29,6 +29,7 @@ Live previews of both pagination components using the Netflix API can be found b
 * [Backbone.Paginator.requestPager()](http://addyosmani.github.com/backbone.paginator/examples/netflix-request-paging/index.html)
 * [Backbone.Paginator.clientPager()](http://addyosmani.github.com/backbone.paginator/examples/netflix-client-paging/index.html)
 * [Infinite Pagination (Backbone.Paginator.requestPager())](http://addyosmani.github.com/backbone.paginator/examples/netflix-infinite-paging/index.html)
+* [Diacritic Plugin](http://addyosmani.github.com/backbone.paginator/examples/google-diacritic/index.html)
 
 ##Paginator.requestPager
 
@@ -132,7 +133,7 @@ You might also notice that we're setting `this.totalPages` to the total page cou
             //Normally this.totalPages would equal response.d.__count
             //but as this particular NetFlix request only returns a
             //total count of items for the search, we divide.
-            this.totalPages = Math.floor(response.d.__count / this.perPage);
+            this.totalPages = Math.ceil(response.d.__count / this.perPage);
             return tags;
         }
     });
@@ -144,11 +145,48 @@ You might also notice that we're setting `this.totalPages` to the total page cou
 
 For your convenience, the following methods are made available for use in your views to interact with the `requestPager`:
 
-* **Collection.goTo(n)** - go to a specific page
-* **Collection.requestNextPage()** - go to the next page
-* **Collection.requestPreviousPage()** - go to the previous page
-* **Collection.howManyPer(n)** - set the number of items to display per page
+* **Collection.goTo( n, options )** - go to a specific page
+* **Collection.requestNextPage( options )** - go to the next page
+* **Collection.requestPreviousPage( options )** - go to the previous page
+* **Collection.howManyPer( n )** - set the number of items to display per page
 
+**requestPager** collection's methods `.goTo()`, `.requestNextPage()` and `.requestPreviousPage()` are all extension of the original [Backbone Collection.fetch() method](http://documentcloud.github.com/backbone/#Collection-fetch). As so, they all can take the same option object as parameter.
+
+This option object can use `success` and `error` parameters to pass a function to be executed after server answer.
+
+```javascript
+Collection.goTo(n, {
+	success: function( collection, response ) {
+		// called is server request success
+	},
+	error: function( collection, response ) {
+		// called if server request fail
+	}
+});
+```
+
+To manage callback, you could also use the [jqXHR](http://api.jquery.com/jQuery.ajax/#jqXHR) returned by these methods to manage callback.
+
+```javascript
+Collection
+	.requestNextPage()
+	.done(function( data, textStatus, jqXHR ) {
+		// called is server request success
+	})
+	.fail(function( data, textStatus, jqXHR ) {
+		// called if server request fail
+	})
+	.always(function( data, textStatus, jqXHR ) {
+		// do something after server request is complete
+	});
+});
+```
+
+If you'd like to add the incoming models to the current collection, instead of replacing the collection's contents, pass `{add: true}` as an option to these methods.
+
+```javascript
+Collection.requestPreviousPage({ add: true });
+```
 
 ##Paginator.clientPager
 
@@ -256,8 +294,24 @@ As mentioned, your views can hook into a number of convenience methods to naviga
 * **Collection.nextPage()** - go to the next page
 * **Collection.howManyPer(n)** - set how many items to display per page
 * **Collection.setSort(sortBy, sortDirection)** - update sort on the current view. Sorting will automatically detect if you're trying to sort numbers (even if they're strored as strings) and will do the right thing.
-* **Collection.setFilter(filterFields, filterWords)** - filter the current view. Filtering supports multiple words without any specific order, so you'll basically get a full-text search ability. Also, you can pass it only one field from the model, or you can pass an array with fields and all of them will get filtered.
-* **Collection.setFieldFilter(rules)** - filter each value of each model according to `rules` that you pass as argument. Example: You have a collection of books with 'release year' and 'author'. You can filter only the books that were released between 1999 and 2003. And then you can add another `rule` that will filter those books only to authors who's name start with 'A'. Possible rules: function, required, min, max, range, minLength, maxLength, rangeLength, oneOf, equalTo, pattern.
+* **Collection.setFilter(filterFields, filterWords)** - filter the current view. Filtering supports multiple words without any specific order, so you'll basically get a full-text search ability. Also, you can pass it only one field from the model, or you can pass an array with fields and all of them will get filtered. Last option is to pass it an object containing a comparison method and rules. Currently, only ```levenshtein``` method is available.
+
+```javascript
+	this.collection.setFilter(
+		{'Name': {cmp_method: 'levenshtein', max_distance: 7}}
+		, "Amreican P" // Note the switched 'r' and 'e', and the 'P' from 'Pie'
+	);
+```
+
+Also note that the levenshtein plugin should be loaded and enabled using the ```useLevenshteinPlugin``` variable.
+Last but not less important: Performing Levenshtein comparison returns the ```distance``` between to strings. It won't let you *search* lenghty text.
+The distance between two strings means the number of characters that should be added, removed or moved to the left or to the right so the strings get equal.
+That means that comparing "Something" in "This is a test that could show something" will return 32, which is bigger than comparing "Something" and "ABCDEFG" (9).
+Use levenshtein only for short texts (titles, names, etc).
+
+* **Collection.doFakeFilter(filterFields, filterWords)** - returns the models count after fake-applying a call to ```Collection.setFilter```.
+
+* **Collection.setFieldFilter(rules)** - filter each value of each model according to `rules` that you pass as argument. Example: You have a collection of books with 'release year' and 'author'. You can filter only the books that were released between 1999 and 2003. And then you can add another `rule` that will filter those books only to authors who's name start with 'A'. Possible rules: function, required, min, max, range, minLength, maxLength, rangeLength, oneOf, equalTo, containsAllOf, pattern.  Passing this an empty rules set will remove any FieldFilter rules applied.
 ```javascript
 	my_collection.setFieldFilter([
 		{field: 'release_year', type: 'range', value: {min: '1999', max: '2003'}},
@@ -279,11 +333,49 @@ As mentioned, your views can hook into a number of convenience methods to naviga
 	//{field: 'color_name', type: 'rangeLength', value: {min: '4', max: '6'}}
 	//{field: 'color_name', type: 'oneOf', value: ['green', 'yellow']}
 	//{field: 'color_name', type: 'pattern', value: new RegExp('gre*', 'ig')}
+	//{field: 'color_name', type: 'containsAllOf', value: ['green', 'yellow', 'blue']}
+```
+
+* **Collection.doFakeFieldFilter(rules)** - returns the models count after fake-applying a call to ```Collection.setFieldFilter```.
+
+####Implementation notes:
+
+You can use some variables in your ```View``` to represent the actual state of the paginator.
+
+```totalUnfilteredRecords``` - Contains the number of records, including all records filtered in any way. (Only available in ```clientPager```)
+
+```totalRecords``` - Contains the number of records
+
+```currentPage``` - The actual page were the paginator is at.
+
+```perPage``` - The number of records the paginator will show per page.
+
+```totalPages``` - The number of total pages.
+
+```startRecord``` - The posicion of the first record shown in the current page (eg 41 to 50 from 2000 records) (Only available in ```clientPager```)
+
+```endRecord``` - The posicion of the last record shown in the current page (eg 41 to 50 from 2000 records) (Only available in ```clientPager```)
+
+## Plugins
+
+**Diacritic.js**
+
+A plugin for Backbone.Paginator that replaces diacritic characters (`´`, `˝`, `̏`, `˚`,`~` etc.) with characters that match them most closely. This is particularly useful for filtering.
+
+To enable the plugin, set `this.useDiacriticsPlugin` to true, as can be seen in the example below:
+
+```javascript
+Paginator.clientPager = Backbone.Collection.extend({
+	
+		// Default values used when sorting and/or filtering.
+		initialize: function(){
+			this.useDiacriticsPlugin = true; // use diacritics plugin if available
+		...	
 ```
 
 ## Team
 
-* [Addy Osmani](http://github.com/addyosmani) - DPE, Google
+* [Addy Osmani](http://github.com/addyosmani) - Developer Programs Engineer, Google
 * [Alexander Nestorov](http://github.com/alexandernst) - Software Developer, EmeIEme
 
 ## Contributing

@@ -9,8 +9,6 @@
 			'click a.last': 'gotoLast',
 			'click a.page': 'gotoPage',
 			'click .howmany a': 'changeCount',
-			'click a.sortAsc': 'sortByAscending',
-			'click a.sortDsc': 'sortByDescending',
 			'click a.filter': 'filter'
 		},
 
@@ -61,30 +59,6 @@
 			var per = $(e.target).text();
 			this.collection.howManyPer(per);
 		},
-
-		sortByAscending: function (e) {
-			e.preventDefault();
-			var currentSort = this.getSortOption();
-			this.collection.setSort(currentSort, 'asc');
-			this.collection.pager();
-			this.preserveSortOption(currentSort);
-		},
-
-		getSortOption: function () {
-			return $('#sortByOption').val();
-		},
-
-		preserveSortOption: function (option) {
-			$('#sortByOption').val(option);
-		},
-
-		sortByDescending: function (e) {
-			e.preventDefault();
-			var currentSort = this.getSortOption();
-			this.collection.setSort(currentSort, 'desc');
-			this.collection.pager();
-			this.preserveSortOption(currentSort);
-		},
         
 		getFilterField: function () {
 			return $('#filterByOption').val();
@@ -110,18 +84,10 @@
 			 * You can create an array like 
 			 * 
 			 * fields = ['Name', 'Description', ...];
-			 *
-			 *Or an object with rules like
-			 *
-			 * fields = {
-			 *				'Name': {cmp_method: 'levenshtein', max_distance: 7}, 
-			 *				'Description': {cmp_method: 'regexp'},
-			 *				'Rating': {} // This will default to 'regexp'
-			 *			};
 			 */
 
 			var filter = this.getFilterValue();
-			
+
 			this.collection.setFilter(fields, filter);
 			this.collection.pager();
 

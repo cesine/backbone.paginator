@@ -12,7 +12,7 @@
 			dataType: 'jsonp',
 		
 			// the URL (or base URL) for the service
-			url: 'http://odata.netflix.com/v2/Catalog/Titles?&'
+			url: 'http://query.yahooapis.com/v1/public/yql?'
 		},
 		
 		paginator_ui: {
@@ -24,42 +24,36 @@
 			currentPage: 1,
 			
 			// how many items per page should be shown
-			perPage: 3,
+			perPage: 5,
 			
 			// a default number of total pages to query in case the API or 
 			// service you are using does not support providing the total 
 			// number of pages for us.
 			// 10 as a default in case your service doesn't return the total
-			totalPages: 10
+			totalPages: 5
 		},
 		
 		server_api: {
 			// the query field in the request
-			'$filter': 'substringof(\'america\',Name)',
-			
-			// number of items to return per request/page
-			'$top': function() { return this.totalPages * this.perPage },
+			'q': function() { return encodeURIComponent('select title, content, url from google.search where q = "aksenttimerkkejä"') },
 			
 			// how many results the request should skip ahead to
 			// customize as needed. For the Netflix API, skipping ahead based on
 			// page * number of results per page was necessary.
-			'$skip': function() { return this.totalPages * this.perPage },
-			
-			// field to sort by
-			'orderby': 'ReleaseYear',
+			'start': function() { return this.currentPage * this.perPage },
 			
 			// what format would you like to request results in?
-			'$format': 'json',
-			
-			// custom parameters
-			'$inlinecount': 'allpages',
-			'$callback': '?'                                     
+			'format': 'json',
+
+			'diagnostics': 'false',			
+			'env': function() { return encodeURIComponent('store://datatables.org/alltableswithkeys') }
 		},
 
 		parse: function (response) {
 			// Be sure to change this based on how your results
 			// are structured
-			var tags = response.d.results;
+			
+			var tags = response.query.results.results;
 			return tags;
 		}
 

@@ -1,4 +1,4 @@
-/*! backbone.paginator - v0.1.54 - 6/3/2012
+/*! backbone.paginator - v0.1.54 - 8/18/2012
 * http://github.com/addyosmani/backbone.paginator
 * Copyright (c) 2012 Addy Osmani; Licensed MIT */
 
@@ -21,12 +21,15 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 	
 		// Default values used when sorting and/or filtering.
 		initialize: function(){
+			this.useDiacriticsPlugin = true; // use diacritics plugin if available
+			this.useLevenshteinPlugin = true; // use levenshtein plugin if available
+		
 			this.sortColumn = "";
 			this.sortDirection = "desc";
 			this.lastSortColumn = "";
 
 			this.fieldFilterRules = [];
-			this.lastFieldFilterRiles = [];
+			this.lastFieldFilterRules = [];
 
 			this.filterFields = "";
 			this.filterExpression = "";
@@ -58,6 +61,7 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 			_.each(self.server_api, function(value, key){
 				if( _.isFunction(value) ) {
 					value = _.bind(value, self);
+					value = value();
 				}
 				queryAttributes[key] = value;
 			});
@@ -66,6 +70,7 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 			_.each(queryOptions, function(value, key){
 				if( _.isFunction(value) ) {
 					value = _.bind(value, self);
+					value = value();
 				}
 				queryOptions[key] = value;
 			});
@@ -139,17 +144,43 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 		// authors who's name start with 'A'.
 		setFieldFilter: function ( fieldFilterRules ) {
 			if( !_.isEmpty( fieldFilterRules ) ) {
-				this.lastFieldFilterRiles = this.fieldFilterRules;
+				this.lastFieldFilterRules = this.fieldFilterRules;
 				this.fieldFilterRules = fieldFilterRules;
 				this.pager();
 				this.info();
 			}
 		},
+
+		// doFakeFieldFilter can be used to get the number of models that will remain
+		// after calling setFieldFilter with a filter rule(s)
+		doFakeFieldFilter: function ( fieldFilterRules ) {
+			if( !_.isEmpty( fieldFilterRules ) ) {
+				var bkp_lastFieldFilterRules = this.lastFieldFilterRules;
+				var bkp_fieldFilterRules = this.fieldFilterRules;
+
+				this.lastFieldFilterRules = this.fieldFilterRules;
+				this.fieldFilterRules = fieldFilterRules;
+				this.pager();
+				this.info();
+
+				var cmodels = this.models.length;
+
+				this.lastFieldFilterRules = bkp_lastFieldFilterRules;
+				this.fieldFilterRules = bkp_fieldFilterRules;
+				this.pager();
+				this.info();
+
+				// Return size
+				return cmodels;
+			}
+		},
     
 		// setFilter is used to filter the current model. After
 		// passing 'fields', which can be a string referring to
-		// the model's field or an array of strings representing
-		// all of the model's fields you wish to filter by and
+		// the model's field, an array of strings representing
+		// each of the model's fields or an object with the name
+		// of the model's field(s) and comparing options (see docs)
+		// you wish to filter by and
 		// 'filter', which is the word or words you wish to 
 		// filter by, pager() and info() will be called automatically.
 		setFilter: function ( fields, filter ) {
@@ -159,6 +190,33 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 				this.filterExpression = filter;
 				this.pager();
 				this.info();
+			}
+		},
+
+		// doFakeFilter can be used to get the number of models that will
+		// remain after calling setFilter with a `fields` and `filter` args. 
+		doFakeFilter: function ( fields, filter ) {
+			if( fields !== undefined && filter !== undefined ){
+				var bkp_filterFields = this.filterFields;
+				var bkp_lastFilterExpression = this.lastFilterExpression;
+				var bkp_filterExpression = this.filterExpression;
+
+				this.filterFields = fields;
+				this.lastFilterExpression = this.filterExpression;
+				this.filterExpression = filter;
+				this.pager();
+				this.info();
+
+				var cmodels = this.models.length;
+
+				this.filterFields = bkp_filterFields;
+				this.lastFilterExpression = bkp_lastFilterExpression;
+				this.filterExpression = bkp_filterExpression;
+				this.pager();
+				this.info();
+
+				// Return size
+				return cmodels;
 			}
 		},
 
@@ -195,13 +253,13 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 			}
       
 			// If the sorting or the filtering was changed go to the first page
-			if ( this.lastSortColumn !== this.sortColumn || this.lastFilterExpression !== this.filterExpression || !_.isEqual(this.fieldFilterRules, this.lastFieldFilterRiles) ) {
+			if ( this.lastSortColumn !== this.sortColumn || this.lastFilterExpression !== this.filterExpression || !_.isEqual(this.fieldFilterRules, this.lastFieldFilterRules) ) {
 				start = 0;
 				stop = start + disp;
 				self.currentPage = 1;
 
 				this.lastSortColumn = this.sortColumn;
-				this.lastFieldFilterRiles = this.fieldFilterRules;
+				this.lastFieldFilterRules = this.fieldFilterRules;
 				this.lastFilterExpression = this.filterExpression;
 			}
 			
@@ -419,13 +477,31 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 			//  "Mustang" in the description and then the HP in the 'hp' field.
 			//  NOTE: "Black Musta 300" will return the same as "Black Mustang 300"
 
-			// We accept fields to be a string or an array,
-			// but if string is passed we need to convert it
-			// to an array.
+			// We accept fields to be a string, an array or an object
+			// but if string or array is passed we need to convert it
+			// to an object.
+			
+			var self = this;
+			
+			var obj_fields = {};
+			
 			if( _.isString( fields ) ) {
-				var tmp_s = fields;
-				fields = [];
-				fields.push(tmp_s);
+				obj_fields[fields] = {cmp_method: 'regexp'};
+			}else if( _.isArray( fields ) ) {
+				_.each(fields, function(field){
+					obj_fields[field] = {cmp_method: 'regexp'};
+				});
+			}else{
+				_.each(fields, function( cmp_opts, field ) {
+					obj_fields[field] = _.defaults(cmp_opts, { cmp_method: 'regexp' });
+				});
+			}
+			
+			fields = obj_fields;
+			
+			//Remove diacritic characters if diacritic plugin is loaded
+			if( _.has(Backbone.Paginator, 'removeDiacritics') && self.useDiacriticsPlugin ){
+				filter = Backbone.Paginator.removeDiacritics(filter);
 			}
 			
 			// 'filter' can be only a string.
@@ -437,9 +513,8 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 			if( filter === '' || !_.isString(filter) ) {
 				return models;
 			} else {
-				filter = filter.match(/\w+/ig);
-				filter = _.uniq(filter);
-				var pattern = "(" + filter.join("|") + ")";
+				var words = filter.match(/\w+/ig);
+				var pattern = "(" + _.uniq(words).join("|") + ")";
 				var regexp = new RegExp(pattern, "igm");
 			}
 			
@@ -449,27 +524,49 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 			_.each( models, function( model ) {
 
 				var matchesPerModel = [];
-			
+
 				// and over each field of each model
-				_.each( fields, function( field ) {
+				_.each( fields, function( cmp_opts, field ) {
 
 					var value = model.get( field );
 
 					if( value ) {
 					
-						// The regular expression we created earlier let's us to detect if a
+						// The regular expression we created earlier let's us detect if a
 						// given string contains each and all of the words in the regular expression
 						// or not, but in both cases match() will return an array containing all 
 						// the words it matched.
-						var matchesPerField = model.get( field ).toString().match( regexp );
+						var matchesPerField = [];
+						
+						if( _.has(Backbone.Paginator, 'removeDiacritics') && self.useDiacriticsPlugin ){
+							value = Backbone.Paginator.removeDiacritics(value.toString());
+						}else{
+							value = value.toString();
+						}
+
+						// Levenshtein cmp
+						if( cmp_opts.cmp_method === 'levenshtein' && _.has(Backbone.Paginator, 'levenshtein') && self.useLevenshteinPlugin ) {
+							var distance = Backbone.Paginator.levenshtein(value, filter);
+
+							_.defaults(cmp_opts, { max_distance: 0 });
+
+							if( distance <= cmp_opts.max_distance ) {
+								matchesPerField = _.uniq(words);
+							}
+
+						// Default (RegExp) cmp
+						}else{
+							matchesPerField = value.match( regexp );
+						}
+
 						matchesPerField = _.map(matchesPerField, function(match) {
 							return match.toString().toLowerCase();
 						});
-						
+
 						_.each(matchesPerField, function(match){
 							matchesPerModel.push(match);
 						});
-						
+
 					}
 
 				});
@@ -478,7 +575,7 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 				// regex, and if it does, it means that we have a match, so we should save it.
 				matchesPerModel = _.uniq( _.without(matchesPerModel, "") );
 
-				if(  _.isEmpty( _.difference(filter, matchesPerModel) ) ) {
+				if(  _.isEmpty( _.difference(words, matchesPerModel) ) ) {
 					filteredModels.push(model);
 				}
 				
@@ -496,6 +593,7 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 				totalPages = Math.ceil(totalRecords / self.perPage);
 
 			info = {
+				totalUnfilteredRecords: self.origModels.length,
 				totalRecords: totalRecords,
 				currentPage: self.currentPage,
 				perPage: this.perPage,
@@ -508,7 +606,7 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 			};
 
 			if (self.currentPage > 1) {
-				info.prev = self.currentPage - 1;
+				info.previous = self.currentPage - 1;
 			}
 
 			if (self.currentPage < info.totalPages) {
@@ -609,6 +707,7 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 			_.each(self.server_api, function(value, key){
 				if( _.isFunction(value) ) {
 					value = _.bind(value, self);
+					value = value();
 				}
 				queryAttributes[key] = value;
 			});
@@ -617,6 +716,7 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 			_.each(queryOptions, function(value, key){
 				if( _.isFunction(value) ) {
 					value = _.bind(value, self);
+					value = value();
 				}
 				queryOptions[key] = value;
 			});
@@ -629,9 +729,15 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 				dataType: 'jsonp'
 			});
 
+			// Allows the passing in of {data: {foo: 'bar'}} at request time to overwrite server_api defaults
+			if( options.data ){
+				options.data = decodeURIComponent($.param(_.extend(queryAttributes,options.data)));
+			}else{
+				options.data = decodeURIComponent($.param(queryAttributes));
+			}
+
 			queryOptions = _.extend(queryOptions, {
 				jsonpCallback: 'callback',
-				data: decodeURIComponent($.param(queryAttributes)),
 				processData: false,
 				url: _.result(queryOptions, 'url')
 			}, options);
@@ -639,19 +745,26 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 			return $.ajax( queryOptions );
 
 		},
-
-
-		requestNextPage: function () {
+		
+		requestNextPage: function ( options ) {
 			if ( this.currentPage !== undefined ) {
 				this.currentPage += 1;
-				this.pager();
+				return this.pager( options );
+			} else {
+				var response = new $.Deferred();
+				response.reject();
+				return response.promise();
 			}
 		},
 
-		requestPreviousPage: function () {
+		requestPreviousPage: function ( options ) {
 			if ( this.currentPage !== undefined ) {
 				this.currentPage -= 1;
-				this.pager();
+				return this.pager( options );
+			} else {
+				var response = new $.Deferred();
+				response.reject();
+				return response.promise();
 			}
 		},
 
@@ -663,10 +776,14 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 
 		},
 
-		goTo: function ( page ) {
-			if(page !== undefined){
+		goTo: function ( page, options ) {
+			if ( page !== undefined ) {
 				this.currentPage = parseInt(page, 10);
-				this.pager();				
+				return this.pager( options );
+			} else {
+				var response = new $.Deferred();
+				response.reject();
+				return response.promise();
 			}
 		},
 
@@ -685,6 +802,10 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 		info: function () {
 
 			var info = {
+				// If parse() method is implemented and totalRecords is set to the length
+				// of the records returned, make it available. Else, default it to 0
+				totalRecords: this.totalRecords || 0,
+
 				currentPage: this.currentPage,
 				firstPage: this.firstPage,
 				totalPages: this.totalPages,
@@ -697,8 +818,11 @@ Backbone.Paginator = (function ( Backbone, _, $ ) {
 		},
 
 		// fetches the latest results from the server
-		pager: function () {
-			this.fetch({});
+		pager: function ( options ) {
+			if ( !_.isObject(options) ) {
+				options = {};
+			}
+			return this.fetch( options );
 		}
 
 
